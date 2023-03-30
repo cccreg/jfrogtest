@@ -1,0 +1,40 @@
+name: build-and-push-to-jfrog
+on:  
+  push:
+    branches:  
+    - master
+env:
+  DOCKERFILE: Dockerfile
+  VERSION: v1.0
+  CI: true
+jobs:
+  build:
+    name: Checkout
+    runs-on: ubuntu-latest
+    steps:
+    - name: checkout 🛎️
+      uses: actions/checkout@v2
+
+    - name: setup docker context for buildx
+      id: buildx-context
+      run: |
+        docker context create builders
+
+    - name: setup docker buildx
+      uses: docker/setup-buildx-action@v2
+      with:
+        endpoint: builders
+
+    - name: setup Jfrog 🐸 
+      uses: jfrog/setup-jfrog-cli@v3
+      env:
+        JF_URL: ${{ secrets.JFROG_URL }}
+        JF_USER: ${{ secrets.JFROG_USER }}
+        JF_PASSWORD: ${{ secrets.JFROG_TOKEN }}
+
+    - name: Build and push container
+      run: |
+        jfrog rt ping
+        jfrog docker build -f ${{ env.DOCKERFILE }} -t my-container .
+        jfrog docker tag my-container "${{ secrets.JFROG_IMAGE_NAME }}:${{ env.VERSION }}"
+        jfrog docker push "${{ secrets.JFROG_IMAGE_NAME }}:${{ env.VERSION }}"
