@@ -1,4 +1,4 @@
-name: build-and-push-to-jfrog
+name: build-and-push-to-jfrog  
 on:  
   push:
     branches:  
